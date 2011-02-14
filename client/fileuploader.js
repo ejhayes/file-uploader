@@ -390,7 +390,7 @@ qq.FileUploaderBasic.prototype = {
     },       
     _uploadFile: function(fileContainer){      
         var id = this._handler.add(fileContainer);
-        var fileName = this._options.params.prefix + "_" + this._handler.getName(id);
+        var fileName = this._handler.getName(id);
         
         if (this._options.onSubmit(id, fileName) !== false){
             this._onSubmit(id, fileName);
