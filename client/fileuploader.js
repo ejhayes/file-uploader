@@ -492,6 +492,7 @@ qq.FileUploader = function(o){
 
         // template for one item in file list
         fileTemplate: '<li>' +
+                '<span style="display: none" class="qq-upload-file-id"></span>' +
                 '<span class="qq-upload-file"></span>' +
                 '<span class="qq-upload-spinner"></span>' +
                 '<span class="qq-upload-size"></span>' +
@@ -506,7 +507,8 @@ qq.FileUploader = function(o){
             drop: 'qq-upload-drop-area',
             dropActive: 'qq-upload-drop-area-active',
             list: 'qq-upload-list',
-                        
+            
+            fileId: 'qq-upload-file-id',
             file: 'qq-upload-file',
             spinner: 'qq-upload-spinner',
             size: 'qq-upload-size',
@@ -617,6 +619,10 @@ qq.extend(qq.FileUploader.prototype, {
 
         // mark completed
         var item = this._getItemByFileId(id);                
+        
+        // set the return id
+        qq.setText(this._find(item,'fileId'),result.fileId)
+        
         qq.remove(this._find(item, 'cancel'));
         qq.remove(this._find(item, 'spinner'));
         
@@ -635,8 +641,9 @@ qq.extend(qq.FileUploader.prototype, {
             var item = qq.toElement(this._options.fileTemplate);                
             item.qqFileId = count++;
 
-            qq.setText(this._find(item, 'file'), initialFiles[i].name);
+            this._find(item, 'file').innerHTML= '<a class="qq-file-link" href="#">' + initialFiles[i].name + '</a>';
             qq.setText(this._find(item, 'size'), initialFiles[i].size);
+            qq.setText(this._find(item, 'fileId'), initialFiles[i].id);
             
             this._handler.push(initialFiles[i].name);
             
@@ -651,7 +658,8 @@ qq.extend(qq.FileUploader.prototype, {
         item.qqFileId = id;
 
         var fileElement = this._find(item, 'file');        
-        qq.setText(fileElement, this._formatFileName(fileName));
+        fileElement.innerHTML = '<a class="qq-file-link" href="#">' + this._formatFileName(fileName) + '</a>';
+        
         this._find(item, 'size').style.display = 'none';        
 
         this._listElement.appendChild(item);
@@ -699,7 +707,7 @@ qq.extend(qq.FileUploader.prototype, {
                 qq.preventDefault(e);
                
                 var item = target.parentNode;
-                self._handler.remove(item.qqFileId);
+                self._handler.remove(item.qqFileId, self._find(item,'fileId').innerHTML);
                 qq.remove(item);
             }
         });
@@ -941,8 +949,8 @@ qq.UploadHandlerAbstract.prototype = {
     /**
      * Removes a file that has already been uploaded
      */
-    remove: function(id){
-        this._remove(id);
+    remove: function(id,fileId){
+        this._remove(fileId);
         this._dequeue(id);
     },
     /**
@@ -978,10 +986,10 @@ qq.UploadHandlerAbstract.prototype = {
      */
     _cancel: function(id){}, 
     /**
-     * Actual remove method
+     * Actual remove method (expects the id of the file to remove)
      */
     _remove: function(id){
-        $.getJSON(this._options.removeAction,{qqfile:this.getName(id)},function(json){
+        $.getJSON(this._options.removeAction,{fileId:id},function(json){
             console.log("%o",json);
         });
     },     
@@ -1284,7 +1292,7 @@ qq.extend(qq.UploadHandlerXhr.prototype, {
             this._options.onComplete(id, name, {});
         }
 
-        this._files[id] = this._params[id].prefix + '_' + this.getName(id);
+        this._files[id] = this.getName(id);
         this._xhrs[id] = null;    
         this._dequeue(id);                    
     },
